@@ -1,0 +1,21 @@
+{
+  "name": "chat-app",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node turbo.js dev",
+    "start": "node turbo.js start"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/surendrakumar6350/chat-app.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/surendrakumar6350/chat-app/issues"
+  },
+  "homepage": "https://github.com/surendrakumar6350/chat-app#readme",
+  "description": ""
+}

@@ -1,0 +1,32 @@
+name: Deployment
+
+on:
+  push:
+
+jobs:
+  test:
+    name: Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: "npm"
+
+      - name: Setup SSH key
+        run: |
+          echo "${{ secrets.EC2_PEM_KEY }}" > key.pem
+          chmod 400 key.pem
+
+      - name: SSH into EC2, clone repo, and install deps
+        run: |
+          ssh -i key.pem -o StrictHostKeyChecking=no ubuntu@34.224.149.65 << EOF
+            rm -rf chat-app
+            git clone https://${{ secrets.GH_PAT }}@github.com/surendrakumar6350/chat-app.git
+            cd chat-app
+            npm install
+            pm2 start npm --name "chat-app" -- run start
+            echo "✅ Repo cloned, installed and started"
+          EOF
