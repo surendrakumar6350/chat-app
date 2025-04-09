@@ -21,7 +21,7 @@ jobs:
 
       - name: SSH into EC2, clone repo, and install deps
         run: |
-          ssh -i key.pem -o StrictHostKeyChecking=no ubuntu@34.224.149.65 << EOF
+          ssh -i key.pem -o StrictHostKeyChecking=no -tt ubuntu@34.224.149.65 << 'EOF'
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
