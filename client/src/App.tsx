@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, KeyboardEvent, ChangeEvent } from "react";
+import { WEB_SOCKET_ADDRESS } from '../constants';
 
 interface Message {
   text: string;
@@ -13,7 +14,7 @@ function App() {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const ws = new WebSocket("ws://localhost:8080");
+    const ws = new WebSocket(WEB_SOCKET_ADDRESS);
 
     ws.onopen = () => {
       console.log("✅ Connected to WebSocket");
@@ -97,8 +98,8 @@ function App() {
                   >
                     <div
                       className={`max-w-xs md:max-w-md px-4 py-2 rounded-lg ${msg.sender === "you"
-                          ? "bg-purple-600 text-white rounded-br-none"
-                          : "bg-gray-700 text-gray-200 rounded-bl-none"
+                        ? "bg-purple-600 text-white rounded-br-none"
+                        : "bg-gray-700 text-gray-200 rounded-bl-none"
                         }`}
                     >
                       {msg.text}
