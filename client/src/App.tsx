@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, Video, User, Phone, PhoneOff, Mic, MicOff, Video as VideoIcon, VideoOff } from 'lucide-react';
+import { WEB_SOCKET_ADDRESS } from "../constants"
 
 interface ChatMessage {
   id: string;
@@ -61,7 +62,7 @@ const SocketChatApp: React.FC = () => {
   };
 
   useEffect(() => {
-    const ws = new WebSocket('wss://e7af-103-68-43-207.ngrok-free.app');
+    const ws = new WebSocket(WEB_SOCKET_ADDRESS);
     wsRef.current = ws;
 
     ws.onopen = () => {
@@ -552,8 +553,8 @@ const SocketChatApp: React.FC = () => {
           <div className="flex justify-center gap-4 sm:gap-6">
             <button
               className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center ${isAudioEnabledRef.current
-                  ? 'bg-[#333333] hover:border-[#646cff] hover:border'
-                  : 'bg-red-500'
+                ? 'bg-[#333333] hover:border-[#646cff] hover:border'
+                : 'bg-red-500'
                 }`}
               onClick={toggleAudio}
             >
@@ -565,8 +566,8 @@ const SocketChatApp: React.FC = () => {
             </button>
             <button
               className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center ${isVideoEnabledRef.current
-                  ? 'bg-[#333333] hover:border-[#646cff] hover:border'
-                  : 'bg-red-500'
+                ? 'bg-[#333333] hover:border-[#646cff] hover:border'
+                : 'bg-red-500'
                 }`}
               onClick={toggleVideo}
             >
@@ -703,8 +704,8 @@ const SocketChatApp: React.FC = () => {
               <button
                 key={user.id}
                 className={`px-3 py-1 rounded-full text-sm flex items-center ${selectedUser && selectedUser.id === user.id
-                    ? 'bg-[#646cff] text-white'
-                    : 'bg-[#333333] hover:border-[#646cff] hover:border'
+                  ? 'bg-[#646cff] text-white'
+                  : 'bg-[#333333] hover:border-[#646cff] hover:border'
                   }`}
                 onClick={() => handleUserClick(user)}
               >
@@ -739,8 +740,8 @@ const SocketChatApp: React.FC = () => {
                   >
                     <div
                       className={`rounded-lg px-4 py-2 ${msg.type === 'self'
-                          ? 'bg-[#646cff] text-white'
-                          : 'bg-[#333333] text-gray-200'
+                        ? 'bg-[#646cff] text-white'
+                        : 'bg-[#333333] text-gray-200'
                         }`}
                     >
                       <div className="font-bold text-sm">
