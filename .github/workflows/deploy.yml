@@ -19,13 +19,14 @@ jobs:
           echo "${{ secrets.EC2_PEM_KEY }}" > key.pem
           chmod 400 key.pem
 
-      - name: SSH into EC2, clone repo, and install deps
+      - name: SSH into EC2, clone repo, and deploy
         run: |
           ssh -i key.pem -o StrictHostKeyChecking=no -tt ubuntu@${{ secrets.S_IP }} << 'EOF'
             rm -rf chat-app
             git clone https://${{ secrets.GH_PAT }}@github.com/surendrakumar6350/chat-app.git
             cd chat-app
             npm install
+            pm2 delete chat-app
             pm2 start npm --name "chat-app" -- run start
             echo "✅ deployed successfully"
             exit 0

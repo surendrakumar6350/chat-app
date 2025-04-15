@@ -58,7 +58,7 @@ function ensureClientReady() {
 // ------------------ SERVER ------------------
 function ensureServerReady() {
   const serverPath = "./server";
-  const vendorPath = `${serverPath}/vendor`;
+  const vendorPath = `${serverPath}/node_modules`;
 
   if (!fs.existsSync(serverPath)) {
     console.error("❌ 'server' folder not found.");
@@ -68,7 +68,7 @@ function ensureServerReady() {
   if (!fs.existsSync(vendorPath)) {
     console.log("📦 Installing server dependencies...");
     try {
-      execSync("composer install", { cwd: serverPath, stdio: "inherit" });
+      execSync("npm install", { cwd: serverPath, stdio: "inherit" });
     } catch {
       console.error("❌ composer install failed in server/");
       process.exit(1);
@@ -80,12 +80,12 @@ function ensureServerReady() {
 function runDev() {
   console.log("🚀 Starting DEV mode...");
   run("npm run dev", "./client");
-  run("php run.php", "./server");
+  run("node index.js", "./server");
 }
 
 function runStart() {
   console.log("🚀 Starting PROD mode...");
-  run("php run.php", "./server");
+  run("node index.js", "./server");
   run("serve -s dist -l 5173", "./client");
 }
 
