@@ -80,12 +80,12 @@ function ensureServerReady() {
 function runDev() {
   console.log("🚀 Starting DEV mode...");
   run("npm run dev", "./client");
-  run("node index.js", "./server");
+  run("npm run start", "./server");
 }
 
 function runStart() {
   console.log("🚀 Starting PROD mode...");
-  run("node index.js", "./server");
+  run("npm run start", "./server");
   run("serve -s dist -l 5173", "./client");
 }
 
