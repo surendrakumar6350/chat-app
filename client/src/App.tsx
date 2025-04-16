@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, Video, User, Phone, PhoneOff, Mic, MicOff, Video as VideoIcon, VideoOff } from 'lucide-react';
+import { MessageSquare, Video, User, Phone, PhoneOff, Mic, MicOff, Video as VideoIcon, VideoOff, Search, Bell, Settings, Users } from 'lucide-react';
 import { WEB_SOCKET_ADDRESS } from "../constants"
+import JoinChatForm from "../components/JoinChatForm"
 
 interface ChatMessage {
   id: string;
@@ -23,6 +24,7 @@ const SocketChatApp: React.FC = () => {
   const [isJoined, setIsJoined] = useState<boolean>(false);
   const [isMobileModalOpen, setIsMobileModalOpen] = useState<boolean>(false);
   const [isMobile, setIsMobile] = useState<boolean>(false);
+  const [onlineUsers, setOnlineUsers] = useState(0);
 
   useEffect(() => {
     const checkIfMobile = () => {
@@ -68,7 +70,6 @@ const SocketChatApp: React.FC = () => {
     ws.onopen = () => {
       console.log('WebSocket connection opened');
       addSystemMessage("Connected to server successfully!");
-      addSystemMessage("Click on a username in the navigation bar to start a video call.");
     };
 
     ws.onmessage = (event) => {
@@ -77,6 +78,7 @@ const SocketChatApp: React.FC = () => {
 
       if (data.type === "yourId") {
         clientIdRef.current = data.message;
+        setOnlineUsers(data.onlineUsers);
       }
 
       if (data.type === "activeClients") {
@@ -552,7 +554,7 @@ const SocketChatApp: React.FC = () => {
           {/* Call controls - Made responsive */}
           <div className="flex justify-center gap-4 sm:gap-6">
             <button
-              className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center ${isAudioEnabledRef.current
+              className={`w-18 h-18 sm:w-14 sm:h-14 rounded-full flex items-center justify-center ${isAudioEnabledRef.current
                 ? 'bg-[#333333] hover:border-[#646cff] hover:border'
                 : 'bg-red-500'
                 }`}
@@ -565,7 +567,7 @@ const SocketChatApp: React.FC = () => {
               )}
             </button>
             <button
-              className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center ${isVideoEnabledRef.current
+              className={`w-18 h-18 sm:w-14 sm:h-14 rounded-full flex items-center justify-center ${isVideoEnabledRef.current
                 ? 'bg-[#333333] hover:border-[#646cff] hover:border'
                 : 'bg-red-500'
                 }`}
@@ -578,7 +580,7 @@ const SocketChatApp: React.FC = () => {
               )}
             </button>
             <button
-              className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center"
+              className="w-18 h-18 sm:w-14 sm:h-14 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center"
               onClick={endCall}
             >
               <PhoneOff size={20} className="text-white" />
@@ -594,13 +596,13 @@ const SocketChatApp: React.FC = () => {
           </h3>
           <div className="flex justify-center gap-4">
             <button
-              className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-green-600 hover:bg-green-700 flex items-center justify-center"
+              className="w-18 h-18 sm:w-16 sm:h-16 rounded-full bg-green-600 hover:bg-green-700 flex items-center justify-center"
               onClick={acceptCall}
             >
               <Phone size={24} className="text-white" />
             </button>
             <button
-              className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center"
+              className="w-18 h-18 sm:w-16 sm:h-16 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center"
               onClick={rejectCall}
             >
               <PhoneOff size={24} className="text-white" />
@@ -615,7 +617,7 @@ const SocketChatApp: React.FC = () => {
             Calling {selectedUser?.username}...
           </h3>
           <button
-            className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center"
+            className="w-18 h-18 sm:w-16 sm:h-16 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center"
             onClick={endCall}
           >
             <PhoneOff size={24} className="text-white" />
@@ -643,187 +645,179 @@ const SocketChatApp: React.FC = () => {
 
   if (!isJoined) {
     return (
-      <div className="flex h-screen items-center justify-center p-4">
-        <div className="bg-[#1a1a1a] p-8 rounded-lg shadow-md w-full max-w-md mx-auto">
-          <h1 className="text-2xl font-bold mb-6 text-center">Join Socket Chat</h1>
-
-          <div className="mb-4">
-            <label className="block text-sm font-bold mb-2" htmlFor="username">
-              Username
-            </label>
-            <input
-              id="username"
-              type="text"
-              className="w-full px-3 py-2 border border-gray-600 bg-[#242424] rounded focus:outline-none focus:border-[#646cff]"
-              placeholder="Enter your username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') handleJoinChat();
-              }}
-            />
-          </div>
-
-          <button
-            className="w-full bg-[#646cff] hover:bg-[#535bf2] text-white font-bold py-2 px-4 rounded focus:outline-none"
-            onClick={handleJoinChat}
-          >
-            Join Chat
-          </button>
-        </div>
-      </div>
+      <JoinChatForm username={username}
+        handleJoinChat={handleJoinChat}
+        setUsername={setUsername} onlineUsers={onlineUsers} />
     );
   }
 
   return (
-    <div className="flex flex-col h-screen bg-[#242424]">
-      {/* Navigation Bar - Made responsive */}
-      <div className="bg-[#1a1a1a] text-white py-3 px-4 shadow-md">
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-xl font-bold flex items-center">
-            <MessageSquare className="mr-2" size={20} />
-            <span className="hidden sm:inline">Socket Chat</span>
+    <div className="flex h-screen bg-[#242424]">
+      {/* Sidebar - Desktop Only */}
+      <div className="hidden sm:flex flex-col w-64 bg-[#1a1a1a] border-r border-gray-800">
+        <div className="p-4 border-b border-gray-800">
+          <h1 className="font-bold text-sm flex items-center text-white">
+            <MessageSquare className="mr-2" size={24} />
+            <span className='text-xl'>Anonymous Chat</span>
           </h1>
-          <div className="flex items-center">
-            <User className="mr-1" size={16} />
-            <span className="text-sm">{username}</span>
+        </div>
+
+        {/* User Profile */}
+        <div className="p-4 border-b border-gray-800">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-[#2a2a2a] flex items-center justify-center">
+              <User size={20} className="text-gray-300" />
+            </div>
+            <div className="flex-1">
+              <div className="text-white font-medium">{username}</div>
+              <div className="text-xs text-green-500">Online</div>
+            </div>
+            <Settings size={18} className="text-gray-400 hover:text-white cursor-pointer" />
           </div>
         </div>
 
-        <div className="text-xs text-gray-300 mb-2 hidden sm:block">
-          Active Users - Click on a user to start a video call
-        </div>
-        <div className="text-xs text-gray-300 mb-2 sm:hidden">
-          Active Users - Tap to call
-        </div>
-
-        <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto">
-          {activeUsers
-            .filter(user => user.id !== clientIdRef.current)
-            .map(user => (
-              <button
-                key={user.id}
-                className={`px-3 py-1 rounded-full text-sm flex items-center ${selectedUser && selectedUser.id === user.id
-                  ? 'bg-[#646cff] text-white'
-                  : 'bg-[#333333] hover:border-[#646cff] hover:border'
-                  }`}
-                onClick={() => handleUserClick(user)}
-              >
-                <User size={12} className="mr-1" />
-                {user.username}
-              </button>
-            ))}
+        {/* Navigation */}
+        <div className="p-2">
+          <button className="w-full flex items-center gap-3 px-3 py-2 text-gray-300 hover:bg-[#2a2a2a] rounded-lg">
+            <Users size={18} />
+            <span>Active Users</span>
+          </button>
+          <button className="w-full flex items-center gap-3 px-3 py-2 text-gray-300 hover:bg-[#2a2a2a] rounded-lg">
+            <Bell size={18} />
+            <span>Notifications</span>
+          </button>
         </div>
       </div>
 
-      {/* Main Content - Made responsive */}
-      <div className="flex flex-1 overflow-hidden relative">
-        {/* Chat Area - Responsive layout */}
-        <div className={`flex-1 flex flex-col ${(inCall || callStatusRef.current !== 'idle') ? 'hidden sm:flex' : 'flex'}`}>
-          {/* Messages */}
-          <div
-            ref={messageContainerRef}
-            className="flex-1 overflow-y-auto p-4"
-          >
-            {messages.map(msg => {
-              if (msg.type === 'system') {
-                return (
-                  <div key={msg.id} className="text-center text-gray-400 text-sm my-2">
-                    {msg.text}
-                  </div>
-                );
-              } else {
-                return (
-                  <div
-                    key={msg.id}
-                    className={`mb-4 max-w-[75%] ${msg.type === 'self' ? 'ml-auto' : 'mr-auto'}`}
-                  >
-                    <div
-                      className={`rounded-lg px-4 py-2 ${msg.type === 'self'
-                        ? 'bg-[#646cff] text-white'
-                        : 'bg-[#333333] text-gray-200'
-                        }`}
-                    >
-                      <div className="font-bold text-sm">
-                        {msg.type === 'self' ? 'You' : msg.username}
-                      </div>
-                      <div className="mt-1 break-words">{msg.text}</div>
-                      <div className="text-xs mt-1 opacity-70 text-right">
-                        {formatTime(msg.timestamp)}
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
-            })}
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col">
+        {/* Top Navigation Bar */}
+        <div className="bg-[#1a1a1a] text-white p-3 sm:p-4 shadow-md">
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-xl font-bold flex items-center sm:hidden">
+              <MessageSquare className="mr-2" size={20} />
+              <span className="hidden sm:inline">Anonymous Chat</span>
+            </h1>
+            <div className="hidden sm:flex items-center gap-4 flex-1 max-w-2xl">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  placeholder="Search users..."
+                  className="w-full bg-[#2a2a2a] rounded-lg px-4 py-2 pl-10 text-sm focus:outline-none focus:ring-1 focus:ring-[#646cff]"
+                />
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              </div>
+            </div>
+            <div className="flex items-center gap-2 bg-[#2a2a2a] px-3 py-1.5 rounded-full">
+              <User size={14} />
+              <span className="text-sm">{username}</span>
+            </div>
           </div>
 
-          {/* Message Input - Responsive padding */}
-          <div className="bg-[#1a1a1a] p-3 sm:p-4 border-t border-gray-700">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                className="flex-1 px-3 sm:px-4 py-2 border border-gray-600 bg-[#242424] rounded focus:outline-none focus:border-[#646cff]"
-                placeholder="Type your message..."
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') handleSendMessage();
-                }}
-              />
-              <button
-                className="bg-[#646cff] hover:bg-[#535bf2] text-white px-4 py-2 rounded whitespace-nowrap"
-                onClick={handleSendMessage}
-              >
-                Send
-              </button>
-            </div>
+          <div className="text-sm text-gray-300 mb-2 hidden sm:block">
+            Active Users - Click on a user to start a video call
+          </div>
+          <div className="text-sm text-gray-300 mb-2 sm:hidden">
+            Active Users - Tap to call
+          </div>
+
+          <div className="flex flex-wrap gap-2 max-h-20 overflow-y-auto scrollbar-thin">
+            {activeUsers.filter(user => user.id !== clientIdRef.current).length === 0 ? (
+              <p className="text-sm text-gray-400 bg-[#2a2a2a] px-4 py-2 rounded-lg">
+                No users online. Open in multiple browsers or invite friends.
+              </p>
+            ) : (
+              activeUsers
+                .filter(user => user.id !== clientIdRef.current)
+                .map(user => (
+                  <button
+                    key={user.id}
+                    className={`px-3 py-1.5 rounded-full text-sm flex items-center gap-1.5 transition-colors ${selectedUser && selectedUser.id === user.id
+                      ? 'bg-[#646cff] text-white'
+                      : 'bg-[#2a2a2a] hover:bg-[#333333] text-gray-200'
+                      }`}
+                    onClick={() => handleUserClick(user)}
+                  >
+                    <User size={12} />
+                    {user.username}
+                  </button>
+                ))
+            )}
           </div>
         </div>
 
-        {/* Desktop Video Call Area */}
-        {selectedUser && !isMobile && (
-          <div
-            className={`hidden sm:flex ${callStatusRef.current !== 'idle' ? 'w-80' : 'w-80'
-              } bg-[#1a1a1a] border-l border-gray-700 flex-col`}
-          >
-            <div className="p-4 bg-[#242424] text-white">
-              <div className="flex justify-between items-center">
-                <h2 className="font-bold flex items-center">
-                  <Video className="mr-2" size={16} />
-                  {callStatusRef.current !== 'idle'
-                    ? callStatusRef.current === 'connected'
-                      ? 'In Call'
-                      : callStatusRef.current === 'calling'
-                        ? 'Calling...'
-                        : 'Incoming Call'
-                    : 'Start Call'}
-                </h2>
+        {/* Chat Container */}
+        <div className="flex flex-1 overflow-hidden">
+          {/* Messages Area */}
+          <div className={`flex-1 flex flex-col ${(inCall || callStatusRef.current !== 'idle') ? 'hidden sm:flex' : 'flex'}`}>
+            {/* Messages */}
+            <div
+              ref={messageContainerRef}
+              className="flex-1 overflow-y-auto p-4 space-y-4"
+            >
+              {messages.map(msg => {
+                if (msg.type === 'system') {
+                  return (
+                    <div key={msg.id} className="text-center">
+                      <span className="bg-[#2a2a2a] text-gray-400 text-xs px-3 py-1 rounded-full">
+                        {msg.text}
+                      </span>
+                    </div>
+                  );
+                } else {
+                  const isSelf = msg.type === 'self';
+                  return (
+                    <div
+                      key={msg.id}
+                      className={`max-w-[85%] sm:max-w-[70%] ${isSelf ? 'ml-auto' : ''}`}
+                    >
+                      <div
+                        className={`rounded-2xl ${isSelf ? 'bg-[#646cff] text-white rounded-tr-none' : 'bg-[#2a2a2a] text-gray-200 rounded-tl-none'} px-4 py-2`}
+                      >
+                        <div className="font-medium text-sm">
+                          {isSelf ? 'You' : msg.username}
+                        </div>
+                        <div className="mt-1 break-words">{msg.text}</div>
+                        <div className="text-[10px] mt-1 opacity-70 text-right">
+                          {formatTime(msg.timestamp)}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+              })}
+            </div>
+
+            {/* Message Input */}
+            <div className="bg-[#1a1a1a] p-3 sm:p-4 border-t border-gray-800">
+              <div className="flex gap-2 max-w-5xl mx-auto">
+                <input
+                  type="text"
+                  className="flex-1 px-4 py-2.5 border border-gray-700 bg-[#2a2a2a] rounded-full focus:outline-none focus:border-[#646cff] text-white text-sm"
+                  placeholder="Type your message..."
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') handleSendMessage();
+                  }}
+                />
                 <button
-                  className="text-gray-400 hover:text-white p-2"
-                  onClick={closeModal}
+                  className="bg-[#646cff] hover:bg-[#535bf2] text-white px-6 py-2.5 rounded-full text-sm font-medium transition-colors"
+                  onClick={handleSendMessage}
                 >
-                  &times;
+                  Send
                 </button>
               </div>
-              <div className="text-sm text-gray-400 mt-1">
-                {selectedUser.username}
-              </div>
-            </div>
-
-            <div className="flex-1 flex flex-col items-center justify-center p-4 relative">
-              {renderCallInterface()}
             </div>
           </div>
-        )}
 
-        {/* Mobile Video Call Modal */}
-        {selectedUser && isMobile && isMobileModalOpen && (
-          <div className="fixed inset-0 z-50 bg-black/80 flex flex-col">
-            {/* Custom Mobile Modal */}
-            <div className="bg-[#1a1a1a] text-white rounded-t-xl flex flex-col h-full">
-              {/* Modal Header */}
-              <div className="p-4 bg-[#242424] text-white rounded-t-xl">
+          {/* Desktop Video Call Area */}
+          {selectedUser && !isMobile && (
+            <div
+              className={`hidden sm:flex ${callStatusRef.current !== 'idle' ? 'w-80' : 'w-80'
+                } bg-[#1a1a1a] border-l border-gray-800 flex-col`}
+            >
+              <div className="p-4 bg-[#242424] text-white">
                 <div className="flex justify-between items-center">
                   <h2 className="font-bold flex items-center">
                     <Video className="mr-2" size={16} />
@@ -847,33 +841,77 @@ const SocketChatApp: React.FC = () => {
                 </div>
               </div>
 
-              {/* Modal Content */}
-              <div className="flex-1 flex flex-col items-center justify-center p-4">
+              <div className="flex-1 flex flex-col items-center justify-center p-4 relative">
                 {renderCallInterface()}
               </div>
+            </div>
+          )}
+        </div>
+      </div>
 
-              {/* Pull handle for better mobile UX */}
-              <div className="mx-auto h-1 w-16 bg-gray-600 rounded-full mb-2"></div>
+      {/* Mobile Video Call Modal */}
+      {selectedUser && isMobile && isMobileModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/90 flex flex-col">
+          <div className="bg-[#1a1a1a] text-white rounded-t-2xl flex flex-col h-full">
+            {/* Modal Header */}
+            <div className="p-4 bg-[#242424] text-white rounded-t-2xl">
+              <div className="flex justify-between items-center">
+                <h2 className="font-bold flex items-center">
+                  <Video className="mr-2" size={16} />
+                  {callStatusRef.current !== 'idle'
+                    ? callStatusRef.current === 'connected'
+                      ? 'In Call'
+                      : callStatusRef.current === 'calling'
+                        ? 'Calling...'
+                        : 'Incoming Call'
+                    : 'Start Call'}
+                </h2>
+                <button
+                  className="text-gray-400 hover:text-white p-2"
+                  onClick={closeModal}
+                >
+                  &times;
+                </button>
+              </div>
+              <div className="text-sm text-gray-400 mt-1">
+                {selectedUser.username}
+              </div>
+            </div>
+
+            {/* Modal Content */}
+            <div className="flex-1 flex flex-col items-center justify-center p-4">
+              {renderCallInterface()}
+            </div>
+
+            {/* Pull handle */}
+            <div className="mx-auto h-1 w-16 bg-gray-600 rounded-full mb-2"></div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Call Controls */}
+      {(callStatusRef.current === 'incoming') && (
+        <div className="fixed bottom-24 right-4 sm:hidden z-50 animate-fade-in">
+          <div className="bg-[#1a1a1a] rounded-2xl shadow-xl p-3 flex items-center space-x-3 border border-[#646cff] animate-pulse">
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full bg-[#646cff] opacity-50 animate-ping"></div>
+              <button
+                className="bg-[#646cff] hover:bg-[#535bf2] w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all relative z-10"
+                onClick={() => {
+                  if (!isMobileModalOpen) setIsMobileModalOpen(true);
+                }}
+              >
+                <Phone size={20} className="text-white" />
+              </button>
+            </div>
+
+            <div className="text-left text-white">
+              <p className="text-sm font-semibold">{selectedUser?.username}</p>
+              <p className="text-xs text-gray-300 animate-pulse">Incoming Call...</p>
             </div>
           </div>
-        )}
-
-        {/* Mobile Call Controls Indicator (for better mobile UX) */}
-        {(inCall || callStatusRef.current === 'calling' || callStatusRef.current === 'incoming') && (
-          <div className="fixed bottom-4 right-4 sm:hidden">
-            <button
-              className="bg-[#646cff] w-12 h-12 rounded-full flex items-center justify-center shadow-lg"
-              onClick={() => {
-                if (!isMobileModalOpen) {
-                  setIsMobileModalOpen(true);
-                }
-              }}
-            >
-              <Phone size={20} className="text-white" />
-            </button>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

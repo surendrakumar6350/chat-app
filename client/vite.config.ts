@@ -9,6 +9,7 @@ export default defineConfig({
     allowedHosts: [
       'chat.speedexchange.in',
       'localhost',
+      'da8d-45-248-193-239.ngrok-free.app'
     ]
   },
   plugins: [
