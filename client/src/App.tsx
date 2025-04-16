@@ -1,30 +1,43 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, Video, User, Phone, PhoneOff, Mic, MicOff, Video as VideoIcon, VideoOff, Search, Bell, Settings, Users } from 'lucide-react';
-import { WEB_SOCKET_ADDRESS } from "../constants"
-import JoinChatForm from "../components/JoinChatForm"
+import {
+  MessageSquare, Video, User, Phone, PhoneOff, Mic,
+  MicOff, Video as VideoIcon, VideoOff, Search, Bell, Settings, Users
+} from 'lucide-react';
+import { WEB_SOCKET_ADDRESS } from "../constants";
+import JoinChatForm from "../components/JoinChatForm";
+import { Button } from "../components/ui/button";
+import { ChatMessage, UserData } from "../types/home";
 
-interface ChatMessage {
-  id: string;
-  type: 'system' | 'self' | 'other';
-  text: string;
-  timestamp: Date;
-  username?: string;
-}
-
-interface UserData {
-  id: string;
-  username: string;
-}
 
 const SocketChatApp: React.FC = () => {
   const [username, setUsername] = useState<string>('');
   const [message, setMessage] = useState<string>('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [activeUsers, setActiveUsers] = useState<UserData[]>([]);
+
   const [isJoined, setIsJoined] = useState<boolean>(false);
   const [isMobileModalOpen, setIsMobileModalOpen] = useState<boolean>(false);
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [onlineUsers, setOnlineUsers] = useState(0);
+
+  const selectedUserRef = useRef<UserData | null>(null);
+  const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
+  const inCallRef = useRef<boolean>(false);
+  const [inCall, setInCall] = useState<boolean>(false);
+
+  const clientIdRef = useRef<string | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const localStreamRef = useRef<MediaStream | null>(null);
+  const remoteStreamRef = useRef<MediaStream | null>(null);
+  const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
+  const isVideoEnabledRef = useRef<boolean>(true);
+
+  const isAudioEnabledRef = useRef<boolean>(true);
+  const callStatusRef = useRef<"idle" | "calling" | "incoming" | "connected">("idle");
+  const messageContainerRef = useRef<HTMLDivElement | null>(null);
+  const localVideoRef = useRef<HTMLVideoElement | null>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
+
 
   useEffect(() => {
     const checkIfMobile = () => {
@@ -35,26 +48,6 @@ const SocketChatApp: React.FC = () => {
 
     return () => window.removeEventListener('resize', checkIfMobile);
   }, []);
-
-  const selectedUserRef = useRef<UserData | null>(null);
-  const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
-
-  const inCallRef = useRef<boolean>(false);
-  const [inCall, setInCall] = useState<boolean>(false);
-
-  const clientIdRef = useRef<string | null>(null);
-  const wsRef = useRef<WebSocket | null>(null);
-
-  const localStreamRef = useRef<MediaStream | null>(null);
-  const remoteStreamRef = useRef<MediaStream | null>(null);
-  const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
-  const isVideoEnabledRef = useRef<boolean>(true);
-  const isAudioEnabledRef = useRef<boolean>(true);
-  const callStatusRef = useRef<"idle" | "calling" | "incoming" | "connected">("idle");
-
-  const messageContainerRef = useRef<HTMLDivElement | null>(null);
-  const localVideoRef = useRef<HTMLVideoElement | null>(null);
-  const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
 
   const peerConnectionConfig = {
     'iceServers': [
@@ -515,134 +508,6 @@ const SocketChatApp: React.FC = () => {
     }
   }, [messages]);
 
-  // Render the "Start Call" UI based on call status and device type
-  const renderCallInterface = () => {
-    if (callStatusRef.current === 'connected') {
-      return (
-        <div className="w-full h-full flex flex-col">
-          {/* Main video display (Remote) */}
-          <div className="flex-1 bg-[#242424] rounded-lg relative overflow-hidden mb-4">
-            <video
-              ref={remoteVideoRef}
-              autoPlay
-              playsInline
-              className="w-full h-full object-cover"
-            />
-            {!remoteStreamRef.current && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <User size={80} className="text-gray-600" />
-              </div>
-            )}
-
-            {/* Self video (Local) - Responsive sizing */}
-            <div className="absolute bottom-4 right-4 w-24 h-32 sm:w-32 sm:h-40 bg-[#333333] rounded overflow-hidden border-2 border-gray-600">
-              <video
-                ref={localVideoRef}
-                autoPlay
-                playsInline
-                muted
-                className="w-full h-full object-cover"
-              />
-              {!localStreamRef.current && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <User size={24} className="text-gray-500" />
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Call controls - Made responsive */}
-          <div className="flex justify-center gap-4 sm:gap-6">
-            <button
-              className={`w-18 h-18 sm:w-14 sm:h-14 rounded-full flex items-center justify-center ${isAudioEnabledRef.current
-                ? 'bg-[#333333] hover:border-[#646cff] hover:border'
-                : 'bg-red-500'
-                }`}
-              onClick={toggleAudio}
-            >
-              {isAudioEnabledRef.current ? (
-                <Mic size={20} className="text-white" />
-              ) : (
-                <MicOff size={20} className="text-white" />
-              )}
-            </button>
-            <button
-              className={`w-18 h-18 sm:w-14 sm:h-14 rounded-full flex items-center justify-center ${isVideoEnabledRef.current
-                ? 'bg-[#333333] hover:border-[#646cff] hover:border'
-                : 'bg-red-500'
-                }`}
-              onClick={toggleVideo}
-            >
-              {isVideoEnabledRef.current ? (
-                <VideoIcon size={20} className="text-white" />
-              ) : (
-                <VideoOff size={20} className="text-white" />
-              )}
-            </button>
-            <button
-              className="w-18 h-18 sm:w-14 sm:h-14 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center"
-              onClick={endCall}
-            >
-              <PhoneOff size={20} className="text-white" />
-            </button>
-          </div>
-        </div>
-      );
-    } else if (callStatusRef.current === 'incoming') {
-      return (
-        <div className="text-center p-4 w-full h-full flex flex-col justify-center items-center">
-          <h3 className="text-lg font-medium mb-6 text-white">
-            Incoming call from {selectedUser?.username}
-          </h3>
-          <div className="flex justify-center gap-4">
-            <button
-              className="w-18 h-18 sm:w-16 sm:h-16 rounded-full bg-green-600 hover:bg-green-700 flex items-center justify-center"
-              onClick={acceptCall}
-            >
-              <Phone size={24} className="text-white" />
-            </button>
-            <button
-              className="w-18 h-18 sm:w-16 sm:h-16 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center"
-              onClick={rejectCall}
-            >
-              <PhoneOff size={24} className="text-white" />
-            </button>
-          </div>
-        </div>
-      );
-    } else if (callStatusRef.current === 'calling') {
-      return (
-        <div className="text-center p-4 w-full h-full flex flex-col justify-center items-center">
-          <h3 className="text-lg font-medium mb-6 text-white">
-            Calling {selectedUser?.username}...
-          </h3>
-          <button
-            className="w-18 h-18 sm:w-16 sm:h-16 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center"
-            onClick={endCall}
-          >
-            <PhoneOff size={24} className="text-white" />
-          </button>
-        </div>
-      );
-    } else {
-      return (
-        <div className="text-center w-full h-full flex flex-col justify-center items-center p-4">
-          <div className="w-24 h-24 rounded-full bg-[#242424] mx-auto flex items-center justify-center mb-4">
-            <User size={40} className="text-gray-600" />
-          </div>
-          <h3 className="text-white font-medium mb-4">{selectedUser?.username}</h3>
-          <button
-            className="px-6 py-2 bg-[#646cff] hover:bg-[#535bf2] text-white rounded-full flex items-center justify-center mx-auto"
-            onClick={startCall}
-          >
-            <Phone size={16} className="mr-2" />
-            Start Video Call
-          </button>
-        </div>
-      );
-    }
-  };
-
   if (!isJoined) {
     return (
       <JoinChatForm username={username}
@@ -678,14 +543,14 @@ const SocketChatApp: React.FC = () => {
 
         {/* Navigation */}
         <div className="p-2">
-          <button className="w-full flex items-center gap-3 px-3 py-2 text-gray-300 hover:bg-[#2a2a2a] rounded-lg">
+          <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white">
             <Users size={18} />
-            <span>Active Users</span>
-          </button>
-          <button className="w-full flex items-center gap-3 px-3 py-2 text-gray-300 hover:bg-[#2a2a2a] rounded-lg">
+            Active Users
+          </Button>
+          <Button className="w-full my-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white">
             <Bell size={18} />
-            <span>Notifications</span>
-          </button>
+            Notifications
+          </Button>
         </div>
       </div>
 
@@ -703,12 +568,12 @@ const SocketChatApp: React.FC = () => {
                 <input
                   type="text"
                   placeholder="Search users..."
-                  className="w-full bg-[#2a2a2a] rounded-lg px-4 py-2 pl-10 text-sm focus:outline-none focus:ring-1 focus:ring-[#646cff]"
+                  className="w-full bg-[#2a2a2a] rounded-lg px-4 py-2 pl-10 text-sm border border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#646cff] text-white placeholder-gray-400"
                 />
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               </div>
             </div>
-            <div className="flex items-center gap-2 bg-[#2a2a2a] px-3 py-1.5 rounded-full">
+            <div className="flex items-center gap-2 bg-[#2a2a2a] px-3 py-1.5 rounded-full text-white">
               <User size={14} />
               <span className="text-sm">{username}</span>
             </div>
@@ -730,17 +595,14 @@ const SocketChatApp: React.FC = () => {
               activeUsers
                 .filter(user => user.id !== clientIdRef.current)
                 .map(user => (
-                  <button
+                  <Button
                     key={user.id}
-                    className={`px-3 py-1.5 rounded-full text-sm flex items-center gap-1.5 transition-colors ${selectedUser && selectedUser.id === user.id
-                      ? 'bg-[#646cff] text-white'
-                      : 'bg-[#2a2a2a] hover:bg-[#333333] text-gray-200'
-                      }`}
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
                     onClick={() => handleUserClick(user)}
                   >
-                    <User size={12} />
+                    <User size={12} className="mr-1" />
                     {user.username}
-                  </button>
+                  </Button>
                 ))
             )}
           </div>
@@ -753,7 +615,7 @@ const SocketChatApp: React.FC = () => {
             {/* Messages */}
             <div
               ref={messageContainerRef}
-              className="flex-1 overflow-y-auto p-4 space-y-4"
+              className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#242424]"
             >
               {messages.map(msg => {
                 if (msg.type === 'system') {
@@ -772,7 +634,10 @@ const SocketChatApp: React.FC = () => {
                       className={`max-w-[85%] sm:max-w-[70%] ${isSelf ? 'ml-auto' : ''}`}
                     >
                       <div
-                        className={`rounded-2xl ${isSelf ? 'bg-[#646cff] text-white rounded-tr-none' : 'bg-[#2a2a2a] text-gray-200 rounded-tl-none'} px-4 py-2`}
+                        className={`rounded-2xl ${isSelf
+                          ? 'bg-[#646cff] text-white rounded-tr-none'
+                          : 'bg-[#2a2a2a] text-gray-200 rounded-tl-none'
+                          } px-4 py-2`}
                       >
                         <div className="font-medium text-sm">
                           {isSelf ? 'You' : msg.username}
@@ -793,7 +658,7 @@ const SocketChatApp: React.FC = () => {
               <div className="flex gap-2 max-w-5xl mx-auto">
                 <input
                   type="text"
-                  className="flex-1 px-4 py-2.5 border border-gray-700 bg-[#2a2a2a] rounded-full focus:outline-none focus:border-[#646cff] text-white text-sm"
+                  className="flex-1 px-4 py-2.5 border border-gray-700 bg-[#2a2a2a] rounded-full focus:outline-none focus:border-[#646cff] text-white text-sm placeholder-gray-400"
                   placeholder="Type your message..."
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
@@ -801,17 +666,17 @@ const SocketChatApp: React.FC = () => {
                     if (e.key === 'Enter') handleSendMessage();
                   }}
                 />
-                <button
-                  className="bg-[#646cff] hover:bg-[#535bf2] text-white px-6 py-2.5 rounded-full text-sm font-medium transition-colors"
+                <Button
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
                   onClick={handleSendMessage}
                 >
                   Send
-                </button>
+                </Button>
               </div>
             </div>
           </div>
 
-          {/* Desktop Video Call Area */}
+          {/* Video Call Area - Desktop */}
           {selectedUser && !isMobile && (
             <div
               className={`hidden sm:flex ${callStatusRef.current !== 'idle' ? 'w-80' : 'w-80'
@@ -829,12 +694,12 @@ const SocketChatApp: React.FC = () => {
                           : 'Incoming Call'
                       : 'Start Call'}
                   </h2>
-                  <button
-                    className="text-gray-400 hover:text-white p-2"
+                  <Button
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
                     onClick={closeModal}
                   >
                     &times;
-                  </button>
+                  </Button>
                 </div>
                 <div className="text-sm text-gray-400 mt-1">
                   {selectedUser.username}
@@ -842,7 +707,122 @@ const SocketChatApp: React.FC = () => {
               </div>
 
               <div className="flex-1 flex flex-col items-center justify-center p-4 relative">
-                {renderCallInterface()}
+                {callStatusRef.current === 'connected' && (
+                  <div className="w-full h-full flex flex-col">
+                    {/* Video elements */}
+                    <div className="flex-1 bg-[#242424] rounded-lg relative overflow-hidden mb-4">
+                      <video
+                        ref={remoteVideoRef}
+                        autoPlay
+                        playsInline
+                        className="w-full h-full object-cover"
+                      />
+                      {!remoteStreamRef.current && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <User size={80} className="text-gray-600" />
+                        </div>
+                      )}
+
+                      {/* Local video */}
+                      <div className="absolute bottom-4 right-4 w-24 h-32 sm:w-32 sm:h-40 bg-[#333333] rounded overflow-hidden border-2 border-gray-600">
+                        <video
+                          ref={localVideoRef}
+                          autoPlay
+                          playsInline
+                          muted
+                          className="w-full h-full object-cover"
+                        />
+                        {!localStreamRef.current && (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <User size={24} className="text-gray-500" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Call controls */}
+                    <div className="flex justify-center gap-4 sm:gap-6">
+                      <Button
+                        className="w-18 h-18 sm:w-14 sm:h-14 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                        onClick={toggleAudio}
+                      >
+                        {isAudioEnabledRef.current ? (
+                          <Mic size={20} className="text-white" />
+                        ) : (
+                          <MicOff size={20} className="text-white" />
+                        )}
+                      </Button>
+                      <Button
+                        className="w-18 h-18 sm:w-14 sm:h-14 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                        onClick={toggleVideo}
+                      >
+                        {isVideoEnabledRef.current ? (
+                          <VideoIcon size={20} className="text-white" />
+                        ) : (
+                          <VideoOff size={20} className="text-white" />
+                        )}
+                      </Button>
+                      <Button
+                        className="w-18 h-18 sm:w-14 sm:h-14 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                        onClick={endCall}
+                      >
+                        <PhoneOff size={20} className="text-white" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {callStatusRef.current === 'incoming' && (
+                  <div className="text-center p-4 w-full h-full flex flex-col justify-center items-center">
+                    <h3 className="text-lg font-medium mb-6 text-white">
+                      Incoming call from {selectedUser.username}
+                    </h3>
+                    <div className="flex justify-center gap-4">
+                      <Button
+                        className="w-18 h-18 sm:w-16 sm:h-16 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                        onClick={acceptCall}
+                      >
+                        <Phone size={24} className="text-white" />
+                      </Button>
+                      <Button
+                        className="w-18 h-18 sm:w-16 sm:h-16 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                        onClick={rejectCall}
+                      >
+                        <PhoneOff size={24} className="text-white" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {callStatusRef.current === 'calling' && (
+                  <div className="text-center p-4 w-full h-full flex flex-col justify-center items-center">
+                    <h3 className="text-lg font-medium mb-6 text-white">
+                      Calling {selectedUser.username}...
+                    </h3>
+                    <Button
+                      className="w-18 h-18 sm:w-16 sm:h-16 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                      onClick={endCall}
+                    >
+                      <PhoneOff size={24} className="text-white" />
+                    </Button>
+                  </div>
+                )}
+
+                {callStatusRef.current === 'idle' && (
+                  <div className="text-center w-full h-full flex flex-col justify-center items-center p-4">
+                    <div className="w-24 h-24 rounded-full bg-[#242424] mx-auto flex items-center justify-center mb-4">
+                      <User size={40} className="text-gray-600" />
+                    </div>
+                    <h3 className="text-white font-medium mb-4">{selectedUser.username}</h3>
+                    <Button
+                      className="px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-full flex items-center justify-center mx-auto"
+                      onClick={startCall}
+                    >
+                      <Phone size={16} className="mr-2" />
+                      Start Video Call
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -866,12 +846,12 @@ const SocketChatApp: React.FC = () => {
                         : 'Incoming Call'
                     : 'Start Call'}
                 </h2>
-                <button
-                  className="text-gray-400 hover:text-white p-2"
+                <Button
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
                   onClick={closeModal}
                 >
                   &times;
-                </button>
+                </Button>
               </div>
               <div className="text-sm text-gray-400 mt-1">
                 {selectedUser.username}
@@ -880,7 +860,122 @@ const SocketChatApp: React.FC = () => {
 
             {/* Modal Content */}
             <div className="flex-1 flex flex-col items-center justify-center p-4">
-              {renderCallInterface()}
+              {callStatusRef.current === 'connected' && (
+                <div className="w-full h-full flex flex-col">
+                  {/* Video elements */}
+                  <div className="flex-1 bg-[#242424] rounded-lg relative overflow-hidden mb-4">
+                    <video
+                      ref={remoteVideoRef}
+                      autoPlay
+                      playsInline
+                      className="w-full h-full object-cover"
+                    />
+                    {!remoteStreamRef.current && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <User size={80} className="text-gray-600" />
+                      </div>
+                    )}
+
+                    {/* Local video */}
+                    <div className="absolute bottom-4 right-4 w-24 h-32 sm:w-32 sm:h-40 bg-[#333333] rounded overflow-hidden border-2 border-gray-600">
+                      <video
+                        ref={localVideoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className="w-full h-full object-cover"
+                      />
+                      {!localStreamRef.current && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <User size={24} className="text-gray-500" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Call controls */}
+                  <div className="flex justify-center gap-4">
+                    <Button
+                      className="w-18 h-18 sm:w-14 sm:h-14 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                      onClick={toggleAudio}
+                    >
+                      {isAudioEnabledRef.current ? (
+                        <Mic size={20} className="text-white" />
+                      ) : (
+                        <MicOff size={20} className="text-white" />
+                      )}
+                    </Button>
+                    <Button
+                      className="w-18 h-18 sm:w-14 sm:h-14 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                      onClick={toggleVideo}
+                    >
+                      {isVideoEnabledRef.current ? (
+                        <VideoIcon size={20} className="text-white" />
+                      ) : (
+                        <VideoOff size={20} className="text-white" />
+                      )}
+                    </Button>
+                    <Button
+                      className="w-18 h-18 sm:w-14 sm:h-14 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                      onClick={endCall}
+                    >
+                      <PhoneOff size={20} className="text-white" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {callStatusRef.current === 'incoming' && (
+                <div className="text-center p-4 w-full h-full flex flex-col justify-center items-center">
+                  <h3 className="text-lg font-medium mb-6 text-white">
+                    Incoming call from {selectedUser.username}
+                  </h3>
+                  <div className="flex justify-center gap-4">
+                    <Button
+                      className="w-18 h-18 sm:w-16 sm:h-16 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                      onClick={acceptCall}
+                    >
+                      <Phone size={24} className="text-white" />
+                    </Button>
+                    <Button
+                      className="w-18 h-18 sm:w-16 sm:h-16 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                      onClick={rejectCall}
+                    >
+                      <PhoneOff size={24} className="text-white" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {callStatusRef.current === 'calling' && (
+                <div className="text-center p-4 w-full h-full flex flex-col justify-center items-center">
+                  <h3 className="text-lg font-medium mb-6 text-white">
+                    Calling {selectedUser.username}...
+                  </h3>
+                  <Button
+                    className="w-18 h-18 sm:w-16 sm:h-16 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                    onClick={endCall}
+                  >
+                    <PhoneOff size={24} className="text-white" />
+                  </Button>
+                </div>
+              )}
+
+              {callStatusRef.current === 'idle' && (
+                <div className="text-center w-full h-full flex flex-col justify-center items-center p-4">
+                  <div className="w-24 h-24 rounded-full bg-[#242424] mx-auto flex items-center justify-center mb-4">
+                    <User size={40} className="text-gray-600" />
+                  </div>
+                  <h3 className="text-white font-medium mb-4">{selectedUser.username}</h3>
+                  <Button
+                    className="px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-full flex items-center justify-center mx-auto"
+                    onClick={startCall}
+                  >
+                    <Phone size={16} className="mr-2" />
+                    Start Video Call
+                  </Button>
+                </div>
+              )}
             </div>
 
             {/* Pull handle */}
@@ -895,18 +990,18 @@ const SocketChatApp: React.FC = () => {
           <div className="bg-[#1a1a1a] rounded-2xl shadow-xl p-3 flex items-center space-x-3 border border-[#646cff] animate-pulse">
             <div className="relative">
               <div className="absolute inset-0 rounded-full bg-[#646cff] opacity-50 animate-ping"></div>
-              <button
-                className="bg-[#646cff] hover:bg-[#535bf2] w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all relative z-10"
+              <Button
+                className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white flex items-center justify-center shadow-lg transition-all relative z-10"
                 onClick={() => {
                   if (!isMobileModalOpen) setIsMobileModalOpen(true);
                 }}
               >
                 <Phone size={20} className="text-white" />
-              </button>
+              </Button>
             </div>
 
-            <div className="text-left text-white">
-              <p className="text-sm font-semibold">{selectedUser?.username}</p>
+            <div className="text-left">
+              <p className="text-sm font-semibold text-white">{selectedUser?.username}</p>
               <p className="text-xs text-gray-300 animate-pulse">Incoming Call...</p>
             </div>
           </div>
