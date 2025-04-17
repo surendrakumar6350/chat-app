@@ -11,12 +11,14 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@types/leo-profanity": "^1.5.4",
     "@types/node": "^22.14.1",
     "@types/ws": "^8.18.1",
     "typescript": "^5.8.3"
   },
   "dependencies": {
     "@prisma/client": "^6.6.0",
+    "leo-profanity": "^1.7.0",
     "prisma": "^6.6.0",
     "uuid": "^11.1.0",
     "ws": "^8.18.1"

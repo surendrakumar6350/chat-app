@@ -1,6 +1,7 @@
 import { WebSocket } from 'ws';
 import type { PrismaClient } from '@prisma/client';
 import type { Message } from '../types';
+import * as leoProfanity from 'leo-profanity';
 
 export async function handleMessage(
   ws: WebSocket,
@@ -58,6 +59,19 @@ export async function handleMessage(
       break;
 
     case 'newMessage':
+
+      if (leoProfanity.check(parsed.message)) {
+        ws.send(
+          JSON.stringify({
+            type: 'newMessage',
+            message: 'Your message contains inappropriate content and cannot be sent.',
+            username: 'Admin',
+            id: 'admin',
+          })
+        );
+        return;
+      }
+
       await prisma.message.create({
         data: {
           message: parsed.message,

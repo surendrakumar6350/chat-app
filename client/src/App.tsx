@@ -81,6 +81,17 @@ const SocketChatApp: React.FC = () => {
         }
       }
 
+      if (data.type === "recentMessages") {
+        const recentMessages = data.message.map((msg: any) => ({
+          id: `msg-${Date.now()}-${Math.random()}`,
+          type: 'other',
+          username: msg.username,
+          text: msg.message,
+          timestamp: new Date()
+        }));
+        setMessages(prevMessages => [...prevMessages, ...recentMessages]);
+      }
+
       if (data.type === "newMessage") {
         const incomingMessage: ChatMessage = {
           id: `msg-${Date.now()}-${Math.random()}`,
@@ -499,7 +510,11 @@ const SocketChatApp: React.FC = () => {
   };
 
   const formatTime = (date: Date): string => {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    try {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return "00:00";
+    }
   };
 
   useEffect(() => {
