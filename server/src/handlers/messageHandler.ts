@@ -8,7 +8,7 @@ export async function handleMessage(
   clients: Map<WebSocket, { id: string; username?: string }>,
   prisma: PrismaClient
 ): Promise<void> {
-    
+
   const messageString = typeof data === 'string' ? data : data.toString();
   const clientInfo = clients.get(ws);
 
@@ -28,6 +28,18 @@ export async function handleMessage(
         clientInfo.username = parsed.message;
         clients.set(ws, clientInfo);
       }
+
+      const recentMessages = await prisma.message.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      });
+
+      ws.send(
+        JSON.stringify({
+          type: 'recentMessages',
+          message: recentMessages.reverse(),
+        })
+      );
 
       const activeClients = Array.from(clients.values())
         .filter((c) => c.username)
