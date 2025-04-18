@@ -40,11 +40,11 @@ jobs:
       # Step 6: Install dependencies for tests
       - name: Install test dependencies
         run: |
-          cd test
+          cd tests
           npm install
 
       # Step 7: Run tests
       - name: Run tests
         run: |
-          cd test
+          cd tests
           npm run test
