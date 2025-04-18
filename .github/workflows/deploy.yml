@@ -1,14 +1,48 @@
 name: Deployment
 
 on:
-  workflow_run:
-    workflows: ["Run Tests"]
-    types:
-      - completed
-    status: success
+  push:
 
 jobs:
   test:
+    name: Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install server dependencies
+        run: |
+          cd server
+          npm install
+
+      - name: Start the server
+        run: |
+          cd server
+          npm run start &
+        env:
+          NODE_ENV: test
+
+      - name: Wait for server to start
+        run: sleep 10
+
+      - name: Install test dependencies
+        run: |
+          cd tests
+          npm install
+
+      - name: Run tests
+        run: |
+          cd tests
+          npm run test
+
+  deploy:
     name: Deploy
     runs-on: ubuntu-latest
 
