@@ -1,7 +1,8 @@
 import { WebSocket } from 'ws';
 import type { PrismaClient } from '@prisma/client';
 import type { Message } from '../types';
-import * as leoProfanity from 'leo-profanity';
+import { handleAddUsername } from './message/addUsernameHandler';
+import { handleNewMessage } from './message/newMessageHandler';
 
 export async function handleMessage(
   ws: WebSocket,
@@ -25,73 +26,11 @@ export async function handleMessage(
 
   switch (parsed.type) {
     case 'addUsername':
-      if (clientInfo) {
-        clientInfo.username = parsed.message;
-        clients.set(ws, clientInfo);
-      }
-
-      const recentMessages = await prisma.message.findMany({
-        orderBy: { createdAt: 'desc' },
-        take: 10,
-      });
-
-      ws.send(
-        JSON.stringify({
-          type: 'recentMessages',
-          message: recentMessages.reverse(),
-        })
-      );
-
-      const activeClients = Array.from(clients.values())
-        .filter((c) => c.username)
-        .map((c) => ({ id: c.id, username: c.username! }));
-
-      clients.forEach((info, clientSocket) => {
-        clientSocket.send(
-          JSON.stringify({
-            type: 'activeClients',
-            message: activeClients,
-            id: info.id,
-            username: info.username,
-          })
-        );
-      });
+      await handleAddUsername(ws, parsed, clients, prisma);
       break;
 
     case 'newMessage':
-
-      if (leoProfanity.check(parsed.message)) {
-        ws.send(
-          JSON.stringify({
-            type: 'newMessage',
-            message: 'Your message contains inappropriate content and cannot be sent.',
-            username: 'Admin',
-            id: 'admin',
-          })
-        );
-        return;
-      }
-
-      await prisma.message.create({
-        data: {
-          message: parsed.message,
-          username: parsed.username,
-          senderId: parsed.id || '',
-        },
-      });
-
-      clients.forEach((info, clientSocket) => {
-        if (info.id !== parsed.id) {
-          clientSocket.send(
-            JSON.stringify({
-              type: 'newMessage',
-              message: parsed.message,
-              username: parsed.username,
-              id: parsed.id,
-            })
-          );
-        }
-      });
+      await handleNewMessage(ws, parsed, clients, prisma);
       break;
 
     default:
